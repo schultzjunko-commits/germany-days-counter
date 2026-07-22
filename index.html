@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ドイツ滞在日数カウンター</title>
+<title>やることリスト</title>
 <style>
   :root {
     --bg: #fbf3e9;
@@ -23,7 +23,7 @@
     margin: 0;
     min-height: 100vh;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     background: var(--bg);
     font-family: "Hiragino Sans", "Yu Gothic", "Segoe UI", sans-serif;
@@ -36,15 +36,16 @@
     border: 1px solid var(--border);
     border-radius: 24px;
     padding: 40px 36px;
-    max-width: 420px;
+    max-width: 460px;
     width: 100%;
-    text-align: center;
     box-shadow: 0 10px 30px rgba(184, 102, 61, 0.08);
+    margin-top: 40px;
   }
 
   .icon {
     font-size: 40px;
     margin-bottom: 8px;
+    text-align: center;
   }
 
   h1 {
@@ -52,16 +53,17 @@
     margin: 0 0 28px;
     color: var(--accent-dark);
     font-weight: 600;
+    text-align: center;
   }
 
-  label {
-    display: block;
-    font-size: 14px;
-    color: var(--text-light);
-    margin-bottom: 8px;
+  form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
   }
 
-  input[type="date"] {
+  input[type="text"] {
+    flex: 1;
     font-family: inherit;
     font-size: 16px;
     padding: 10px 14px;
@@ -69,96 +71,197 @@
     border: 1px solid var(--border);
     background: #fff;
     color: var(--text);
-    width: 100%;
-    margin-bottom: 24px;
+    min-width: 0;
   }
 
-  input[type="date"]:focus {
+  input[type="text"]:focus {
     outline: none;
     border-color: var(--accent);
   }
 
-  .result {
-    background: #fdf0e2;
-    border-radius: 16px;
-    padding: 24px 16px;
-  }
-
-  .days {
-    font-size: 48px;
-    font-weight: 700;
-    color: var(--accent-dark);
-    line-height: 1.1;
-  }
-
-  .days span {
-    font-size: 18px;
-    font-weight: 500;
-    margin-left: 4px;
-  }
-
-  .sub {
-    margin-top: 8px;
-    font-size: 13px;
-    color: var(--text-light);
-  }
-
-  .placeholder {
-    color: var(--text-light);
+  button {
+    font-family: inherit;
     font-size: 15px;
-    padding: 12px 0;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    white-space: nowrap;
+  }
+
+  button:hover {
+    background: var(--accent-dark);
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fdf0e2;
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+
+  li input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    border: 2px solid var(--accent);
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    background: #fff;
+  }
+
+  li input[type="checkbox"]:checked {
+    background: var(--accent);
+  }
+
+  li input[type="checkbox"]:checked::after {
+    content: "";
+    position: absolute;
+    left: 5px;
+    top: 1px;
+    width: 5px;
+    height: 10px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  li .task-text {
+    flex: 1;
+    font-size: 15px;
+    word-break: break-word;
+  }
+
+  li.done .task-text {
+    text-decoration: line-through;
+    color: var(--text-light);
+    opacity: 0.6;
+  }
+
+  li .delete-btn {
+    background: none;
+    color: var(--text-light);
+    font-size: 18px;
+    padding: 2px 8px;
+    line-height: 1;
+  }
+
+  li .delete-btn:hover {
+    background: none;
+    color: var(--accent-dark);
+  }
+
+  .empty {
+    text-align: center;
+    color: var(--text-light);
+    font-size: 14px;
+    padding: 16px 0;
   }
 </style>
 </head>
 <body>
   <div class="card">
-    <div class="icon">🏡</div>
-    <h1>ドイツに来てから何日？</h1>
+    <div class="icon">📝</div>
+    <h1>やることリスト</h1>
 
-    <label for="arrival">ドイツに来た日</label>
-    <input type="date" id="arrival">
+    <form id="task-form">
+      <input type="text" id="task-input" placeholder="タスクを入力…" autocomplete="off">
+      <button type="submit">追加</button>
+    </form>
 
-    <div class="result" id="result">
-      <div class="placeholder">日付を選んでね</div>
-    </div>
+    <ul id="task-list"></ul>
   </div>
 
   <script>
-    const input = document.getElementById('arrival');
-    const result = document.getElementById('result');
+    const STORAGE_KEY = 'todoTasks';
+    const form = document.getElementById('task-form');
+    const input = document.getElementById('task-input');
+    const list = document.getElementById('task-list');
+
+    function loadTasks() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveTasks(tasks) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    }
+
+    let tasks = loadTasks();
 
     function render() {
-      if (!input.value) {
-        result.innerHTML = '<div class="placeholder">日付を選んでね</div>';
+      list.innerHTML = '';
+
+      if (tasks.length === 0) {
+        list.innerHTML = '<div class="empty">タスクはまだありません🌱</div>';
         return;
       }
 
-      const arrival = new Date(input.value + 'T00:00:00');
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      tasks.forEach(task => {
+        const li = document.createElement('li');
+        li.className = task.done ? 'done' : '';
 
-      const diffDays = Math.round((today - arrival) / 86400000);
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = task.done;
+        checkbox.addEventListener('change', () => {
+          task.done = checkbox.checked;
+          saveTasks(tasks);
+          render();
+        });
 
-      if (diffDays < 0) {
-        result.innerHTML = `<div class="placeholder">その日はまだ来ていません🌱<br>あと ${-diffDays} 日</div>`;
-        return;
-      }
+        const span = document.createElement('span');
+        span.className = 'task-text';
+        span.textContent = task.text;
 
-      result.innerHTML = `
-        <div class="days">${diffDays}<span>日目</span></div>
-        <div class="sub">ドイツでの毎日、おつかれさま😊</div>
-      `;
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = '×';
+        deleteBtn.addEventListener('click', () => {
+          tasks = tasks.filter(t => t.id !== task.id);
+          saveTasks(tasks);
+          render();
+        });
+
+        li.appendChild(checkbox);
+        li.appendChild(span);
+        li.appendChild(deleteBtn);
+        list.appendChild(li);
+      });
     }
 
-    input.addEventListener('change', () => {
-      localStorage.setItem('germanyArrivalDate', input.value);
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+
+      tasks.push({ id: Date.now(), text, done: false });
+      saveTasks(tasks);
+      input.value = '';
       render();
+      input.focus();
     });
 
-    const saved = localStorage.getItem('germanyArrivalDate');
-    if (saved) {
-      input.value = saved;
-    }
     render();
   </script>
 </body>
