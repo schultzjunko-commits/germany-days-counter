@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ドイツ滞在日数カウンター</title>
+<style>
+  :root {
+    --bg: #fbf3e9;
+    --card: #fffaf3;
+    --accent: #d98a5f;
+    --accent-dark: #b8663d;
+    --text: #5b4636;
+    --text-light: #8a7362;
+    --border: #ecdcc7;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    font-family: "Hiragino Sans", "Yu Gothic", "Segoe UI", sans-serif;
+    color: var(--text);
+    padding: 24px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 40px 36px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(184, 102, 61, 0.08);
+  }
+
+  .icon {
+    font-size: 40px;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-size: 20px;
+    margin: 0 0 28px;
+    color: var(--accent-dark);
+    font-weight: 600;
+  }
+
+  label {
+    display: block;
+    font-size: 14px;
+    color: var(--text-light);
+    margin-bottom: 8px;
+  }
+
+  input[type="date"] {
+    font-family: inherit;
+    font-size: 16px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text);
+    width: 100%;
+    margin-bottom: 24px;
+  }
+
+  input[type="date"]:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .result {
+    background: #fdf0e2;
+    border-radius: 16px;
+    padding: 24px 16px;
+  }
+
+  .days {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--accent-dark);
+    line-height: 1.1;
+  }
+
+  .days span {
+    font-size: 18px;
+    font-weight: 500;
+    margin-left: 4px;
+  }
+
+  .sub {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text-light);
+  }
+
+  .placeholder {
+    color: var(--text-light);
+    font-size: 15px;
+    padding: 12px 0;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">🏡</div>
+    <h1>ドイツに来てから何日？</h1>
+
+    <label for="arrival">ドイツに来た日</label>
+    <input type="date" id="arrival">
+
+    <div class="result" id="result">
+      <div class="placeholder">日付を選んでね</div>
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById('arrival');
+    const result = document.getElementById('result');
+
+    function render() {
+      if (!input.value) {
+        result.innerHTML = '<div class="placeholder">日付を選んでね</div>';
+        return;
+      }
+
+      const arrival = new Date(input.value + 'T00:00:00');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const diffDays = Math.round((today - arrival) / 86400000);
+
+      if (diffDays < 0) {
+        result.innerHTML = `<div class="placeholder">その日はまだ来ていません🌱<br>あと ${-diffDays} 日</div>`;
+        return;
+      }
+
+      result.innerHTML = `
+        <div class="days">${diffDays}<span>日目</span></div>
+        <div class="sub">ドイツでの毎日、おつかれさま😊</div>
+      `;
+    }
+
+    input.addEventListener('change', () => {
+      localStorage.setItem('germanyArrivalDate', input.value);
+      render();
+    });
+
+    const saved = localStorage.getItem('germanyArrivalDate');
+    if (saved) {
+      input.value = saved;
+    }
+    render();
+  </script>
+</body>
+</html>
